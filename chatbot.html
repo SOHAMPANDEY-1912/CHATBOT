@@ -1,0 +1,246 @@
+<!doctype html>
+<html>                     
+  <head>
+    <title>ChatBot</title>
+    <style> 
+      body{
+        font-family:Arial;
+        margin-top:0px;
+        margin-bottom:0px;
+      }                                
+      .send-button{
+        background-color:rgb(25,135,84);    
+        color:white;
+        padding:12px 20px;
+        margin-left:10px;    
+        border:none;
+        border-radius:10px;   
+        font-size:15px;   
+        cursor:pointer;  
+      }
+      .chat-input{
+        padding:12px 15px;
+        border-radius:10px;
+        border-width:1px;
+        font-size:15px;
+        flex-grow:1;
+
+      }
+      .chat-input-container{
+        display:flex;
+        margin-bottom:60px;
+      }
+      .app-container{
+        max-width:600px;
+        margin-left:auto;
+        margin-right:auto;
+        height:100vh;    
+        display:flex;   
+        flex-direction: column;              
+      }
+      .chat-message-user{
+          display:flex;
+          justify-content:end;
+          align-items:start;
+      }
+      .chat-message-robot{
+        display:flex;
+        align-items:start;
+      }
+      .chat-message-text{
+        background-color:rgb(238,238,238);
+        padding:15px 20px;
+        border-radius:10px;
+        margin-right: 10px;
+        margin-left:10px;
+        margin-bottom:20px;
+        max-width:300px;
+      }
+      .chat-message-profile{
+        width:45px;
+      }
+      .chat-messages-container{
+        flex-grow:1;
+        margin-top:20px;
+        overflow:scroll;
+        scrollbar-width:none;
+      }
+    </style>
+  </head>                        
+  <body>
+    <div class="js-container"></div>
+    <!-- <script src="https://unpkg.com/supersimpledev@8.6.4/external-library.js"></script> -->
+    <!--  src attribute=load javascript from a file -->
+    <!-- react is an external library, bunch of code that is outside our computer we can load this code on our website, and use it -->
+    <script src="https://unpkg.com/supersimpledev/react.js"></script>
+    <script src="https://unpkg.com/supersimpledev/react-dom.js"></script>
+    <script src="https://unpkg.com/supersimpledev/chatbot.js"></script>
+    <script src="https://unpkg.com/supersimpledev/babel.js"></script>
+    <script type="text/babel">
+      // this line tells to translate the inside code into javascript
+      function ChatInput({chatMessages,setChatMessages}) {
+        //props() is an object and contains all the attributes that we have given to this component
+        const [inputText, setInputText]=React.useState('')                       // initial value(empty string)
+        function saveInputText(event){           //event is an object it contains the details about the change
+         setInputText(event.target.value);  
+        }
+           function sendMessage()  {
+             const newChatMessages=
+             [
+            ...chatMessages,
+            {
+              message: inputText,
+              sender:'user',
+              id: crypto.randomUUID()
+            }  // spread operator (...) = takes the values in an array, and copies them into a new array
+          ];
+             setChatMessages(newChatMessages);
+            const response= Chatbot.getResponse(inputText);
+             setChatMessages([
+            ...newChatMessages,
+            {
+              message: response,
+              sender:'robot',
+              id: crypto.randomUUID()
+            } // spread operator (...) = takes the values in an array, and copies them into a new array
+          ]);
+             setInputText('')
+           }                                           // it gives us the element that we are typing in
+        
+        
+        return (
+          <div className="chat-input-container">
+            <input
+              placeholder="send a message to chatbotinput"
+              size="30"
+              onChange={saveInputText} 
+              value={inputText}    
+              className="chat-input"             // if we set input text to empty the value in html also becomes empty, this is called controlled input                // onChange=runs a function when we change the text inside an <input>
+              />
+
+            <button
+             onClick={sendMessage}
+             className="send-button"                                  // javascript already has a feature class, class is a reserved word
+            >Send</button>
+          </div>
+          //size="" inside number shows that how many characters can fit in this input
+        );
+        // we can't return two elements so we will be using div element
+      }
+      // function ChatMessage(props) {
+      // const message = props.message;
+      // const sender = props.sender;
+
+      // const { message, sender }=props;// shortcut of above two lines syntax, deconstructing
+      function ChatMessage({ message, sender }) {
+        // this will take directly the properties of message and sender, shortcut of above 3 lines
+        /*if (sender === "robot") {
+          return (
+            <div>
+               <img src="robot_image.png" width="50" />
+              {message}
+             
+            </div>
+          );
+          }
+          */
+        return (
+          <div className={
+            sender === 'user' ? 
+           'chat-message-user'
+            :'chat-message-robot'
+        }>
+            {sender === "robot" && <img src="robot_image.png"  className="chat-message-profile"/>}
+            <div className="chat-message-text">
+             {message}
+            </div>
+            {sender === "user" && <img src="user_image.png"  className="chat-message-profile"/>}
+          </div>
+        );
+      }
+      function ChatMessages({chatMessages}) {
+        const chatMessagesRef = React.useRef(null);                               //useRef=automatically save an html element from the component,it is a container with special react features
+        React.useEffect(()=>{                        //React will run this function . after component is created . every time the component is updated
+         const containerElem=chatMessagesRef.current;
+         if(containerElem){
+          containerElem.scrollTop=containerElem.scrollHeight;
+         }
+        },[chatMessages]);                           //Dependency array=control when useEffect runs
+        return (
+          <div className="chat-messages-container"
+          ref={chatMessagesRef}>
+           
+
+            {chatMessages.map((chatMessage) => {
+              return (
+                <ChatMessage // event prop always start with the 'on' and then the name of the event like 'Click'
+                  message={chatMessage.message} // onClick -> event, sendMessage -> event handler(it does something when this event happens)
+                  sender={chatMessage.sender}
+                  key={chatMessage.id}
+                />
+              );
+            })}
+          </div> // onClick=run a function we click
+          // {} = save any type of value in a prop (including a function)
+        );
+      }
+      function App() {
+        //component inside a component
+
+        // arrow function=works same way as a function,but its shorter
+
+        // chatMessage is the object and .message is the property and saves it into the message props, {}=> saves the result of the code into the prop
+
+        // each chatmessage has two props message,sender
+        const [chatMessages,setChatMessages] = React.useState([
+          {
+            message: "hello chatbot",
+            sender: "user",
+            id: "id1",
+          },
+          {
+            message: "Hello! How can i help you?",
+            sender: "robot",
+            id: "id2",
+          },
+          {
+            message: "can you get me todays date",
+            sender: "user",
+            id: "id3",
+          },
+          {
+            message: "Today is March 6",
+            sender: "robot",
+            id: "id4",
+          },
+        ]);
+       // const [chatMessages]=array;      // array destructuring, this is a shortcut of the following below line
+       // const [chatMessages,setChatMessages]=array;   // this is a shortcut of the following below two lines
+      // const chatMessages = array[0]; //the current data
+       // const setChatMessages = array[1]; //updater function to update this data of html    // this function lets us update the data, in react we should not update the data directly, if we update the data directly React will not update the HTML, this is also known as updater function
+        // currently chatMessages is a normal variable when we update the chatMessages it will not update the html however if we convert chatMessages into state, it will update the html, we should always create a copy and then modify the copy this helps react be more efficient
+       
+        return (                                    // we can't style fragment with css so we convert it into div
+          <div className="app-container">
+            
+            <ChatMessages 
+            chatMessages={chatMessages}
+            />
+            <ChatInput 
+            chatMessages={chatMessages}
+            setChatMessages={setChatMessages}
+            />
+          </div>
+        );
+      }
+
+      //   const button=document.createElement('button');
+      //   button.innerHTML='Hello'; (use the DOM)
+      const container = document.querySelector(".js-container");
+      //   ReactDOM.createRoot(container).render('Welcome to SuperSimpleDev React Course');
+      //   ReactDOM.createRoot(container).render(button);
+      ReactDOM.createRoot(container).render(<App />);
+      //   .render->to display something inside that container, we can display text and html elements inside this container as well
+    </script>
+  </body>
+</html>
